@@ -9,7 +9,7 @@ import (
 )
 
 func Migration(){
-	err := database.DB.AutoMigrate(&models.User{})
+	err := database.DB.Debug().AutoMigrate(&models.User{})
 
 	if err != nil{
 		log.Println(err)
