@@ -15,7 +15,7 @@ func UserAll(c *fiber.Ctx) error{
 
 	var users []models.User
 
-	result := database.DB.Debug().Find(&users)
+	result := database.DB.Debug().Order("name").Find(&users)
 
 	if result.Error != nil {
 		log.Println(result.Error)	
@@ -86,4 +86,84 @@ func UserFind(c *fiber.Ctx) error{
 			"province" : user.Province,
 			},
 	})
+}
+
+func UserEdit(c *fiber.Ctx) error{
+
+	userRequest := new(request.UserEdit)
+
+	if err := c.BodyParser(userRequest); err != nil{
+		return c.Status(400).JSON(fiber.Map{
+			"message" : "bad request",
+		})
+	}
+
+	var user models.User
+
+
+	userId := c.Params("id")
+
+	q := database.DB.First(&user, "id = ?" , userId)
+
+	if q.Error != nil{
+		return c.Status(400).JSON(fiber.Map{
+			"message" : "user not found",
+		})
+	}
+
+	if userRequest.Name != ""{
+		user.Name = userRequest.Name
+	}
+
+	if userRequest.City != ""{
+		user.City = userRequest.City
+	}
+
+	if userRequest.Province != ""{
+		user.Province = userRequest.Province
+	}
+
+	user.Updated_at = time.Now()
+
+	update := database.DB.Save(&user)
+
+	if update.Error != nil{
+		return c.Status(500).JSON(fiber.Map{
+			"message" : "internal server error",
+		})
+	}
+
+	return c.JSON(fiber.Map{
+		"message" : "success",
+		"data" : user,
+	})
+	
+}
+
+func UserDelete(c *fiber.Ctx) error{
+
+	userId := c.Params("id")
+
+	var user models.User
+
+	q := database.DB.First(&user, "id = ?" , userId)
+
+	if q.Error != nil{
+		return c.Status(404).JSON(fiber.Map{
+			"message" : "user not found",
+		})
+	}
+
+	del := database.DB.Delete(&user)
+
+	if del.Error != nil{
+		return c.Status(500).JSON(fiber.Map{
+			"message" : "internal server error",
+		})
+	}
+
+	return c.JSON(fiber.Map{
+		"message" : "user was deleted",
+	})
+
 }
